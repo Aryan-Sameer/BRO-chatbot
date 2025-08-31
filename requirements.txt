@@ -1,7 +1,8 @@
-langchain_huggingface
-langchain.chains
-langchain_community.vectorstores
-langchain_core.prompts
-dotenv
+langchain 
+langchain_community 
+langchain_huggingface 
+faiss-cpu 
+pypdf
+langchain_core
 langchain_groq
-streamli
+streamlit
