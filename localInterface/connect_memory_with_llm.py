@@ -1,6 +1,6 @@
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain_community.vectorstores import FAISS
 from dotenv import load_dotenv, find_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -21,6 +21,7 @@ def load_llm():
 
 # Custom Prompt
 CUSTOM_PROMPT_TEMPLATE = """<s>[INST] <<SYS>>
+You are a helpful AI assistant developed by students of EEE (Electrical and Electronics Engineering)department to address the queries related to VNR VJIET.
 Use the pieces of information provided in the context to answer the user's question.
 If you dont know the answer, just say that you dont know, dont try to make up an answer. 
 Dont provide anything out of the given context.
@@ -41,7 +42,7 @@ def set_custom_prompt(custom_prompt_template=CUSTOM_PROMPT_TEMPLATE):
 DB_FAISS_PATH = "vectorstore/db_faiss"
 
 def get_vectorstore():
-    embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embedding_model = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
     return db
 

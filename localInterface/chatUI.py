@@ -1,10 +1,24 @@
 import streamlit as st
 from connect_memory_with_llm import get_qa_chain
+from sync_pdfs import sync_and_rebuild
 
 def main():
+    st.set_page_config(page_title="VNR VJIET Assistant", page_icon="🤖")
+
     st.title("Welcome to VNR VJIET")
     st.write("I am your AI assistant, here to help you with your queries about VNR VJIET.")
 
+    # Sidebar section
+    st.sidebar.header("Admin Controls")
+    if st.sidebar.button("🔄 Sync PDFs"):
+        with st.spinner("Syncing PDFs and rebuilding FAISS database..."):
+            try:
+                sync_and_rebuild()
+                st.sidebar.success("✅ Sync complete! Database updated.")
+            except Exception as e:
+                st.sidebar.error(f"❌ Sync failed: {e}")
+
+    # Chat section
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
@@ -13,7 +27,7 @@ def main():
         st.chat_message(message['role']).markdown(message['content'])
 
     # User input
-    prompt = st.chat_input("What is your query")
+    prompt = st.chat_input("What is your query?")
 
     if prompt:
         st.chat_message("user").markdown(prompt)
@@ -30,6 +44,7 @@ def main():
 
         except Exception as e:
             st.error(f"An error occurred while setting up the QA chain: {e}")
+
 
 if __name__ == "__main__":
     main()
