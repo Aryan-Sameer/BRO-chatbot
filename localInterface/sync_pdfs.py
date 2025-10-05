@@ -1,24 +1,21 @@
-# sync_pdfs.py
 import os
 import requests
 from dotenv import load_dotenv
 from supabase import create_client
-from llm_memory import rebuild_database   # your file name earlier: llm_memory.py
+from llm_memory import rebuild_database
 
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # anon key is enough if bucket is public
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 BUCKET = "pdfs"
 LOCAL_DATA = "data/"
 
 os.makedirs(LOCAL_DATA, exist_ok=True)
-
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def list_remote_files():
-    items = supabase.storage().from_(BUCKET).list()
-    # items is a list of dicts with at least "name"
+    items = supabase.storage.from_(BUCKET).list()
     return [it["name"] for it in items]
 
 def download_file(name):
@@ -38,24 +35,19 @@ def sync_and_rebuild():
     local = set([f for f in os.listdir(LOCAL_DATA) if f.lower().endswith(".pdf")])
 
     # Download new files
-    to_download = remote - local
-    for name in to_download:
+    for name in remote - local:
         print("Downloading new:", name)
         download_file(name)
 
     # Remove deleted files locally
-    to_remove = local - remote
-    for name in to_remove:
+    for name in local - remote:
         print("Removing local file (deleted remotely):", name)
         os.remove(os.path.join(LOCAL_DATA, name))
 
-    # If anything changed, rebuild FAISS
-    if to_download or to_remove or not os.path.exists("./vectorstore/db_faiss/index.faiss"):
+    # Rebuild FAISS if anything changed
+    if remote != local or not os.path.exists("vectorstore/db_faiss/index.faiss"):
         print("Changes detected, rebuilding FAISS DB...")
-        try:
-            rebuild_database()
-            print("Rebuild done.")
-        except Exception as e:
-            print("Rebuild failed:", e)
+        rebuild_database()
+        print("Rebuild done.")
     else:
         print("No changes. FAISS is up-to-date.")

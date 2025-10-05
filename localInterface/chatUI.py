@@ -1,50 +1,53 @@
 import streamlit as st
-from connect_memory_with_llm import get_qa_chain
 from sync_pdfs import sync_and_rebuild
+from connect_memory_with_llm import get_qa_chain
 
-def main():
-    st.set_page_config(page_title="VNR VJIET Assistant", page_icon="🤖")
+st.set_page_config(page_title="VNR VJIET Assistant", page_icon="🤖")
 
-    st.title("Welcome to VNR VJIET")
-    st.write("I am your AI assistant, here to help you with your queries about VNR VJIET.")
+st.title("Welcome to VNR VJIET")
+st.write("I am your AI assistant, here to help you with your queries about VNR VJIET.")
 
-    # Sidebar section
-    st.sidebar.header("Admin Controls")
-    if st.sidebar.button("🔄 Sync PDFs"):
-        with st.spinner("Syncing PDFs and rebuilding FAISS database..."):
-            try:
-                sync_and_rebuild()
-                st.sidebar.success("✅ Sync complete! Database updated.")
-            except Exception as e:
-                st.sidebar.error(f"❌ Sync failed: {e}")
-
-    # Chat section
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
-
-    # Display past messages
-    for message in st.session_state.messages:
-        st.chat_message(message['role']).markdown(message['content'])
-
-    # User input
-    prompt = st.chat_input("What is your query?")
-
-    if prompt:
-        st.chat_message("user").markdown(prompt)
-        st.session_state.messages.append({'role': 'user', 'content': prompt})
-
+# Sidebar Sync button
+st.sidebar.header("Admin Controls")
+if st.sidebar.button("🔄 Update latest data"):
+    with st.spinner("Rebuilding database..."):
         try:
-            with st.spinner("Thinking..."):
-                qa_chain = get_qa_chain()
-                response = qa_chain.invoke({'query': prompt})
-                result = response["result"]
+            sync_and_rebuild()
+            st.sidebar.success("✅ Database updated.")
+        except Exception as e:
+            st.sidebar.error(f"❌ Sync failed: {e}")
 
+# Chat session messages
+if 'messages' not in st.session_state:
+    st.session_state.messages = []
+
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+
+# Display past messages
+for message in st.session_state.messages:
+    st.chat_message(message['role']).markdown(message['content'])
+
+# User input
+prompt = st.chat_input("What is your query?")
+
+if prompt:
+    st.chat_message("user").markdown(prompt)
+    st.session_state.messages.append({'role': 'user', 'content': prompt})
+
+    try:
+        with st.spinner("Thinking..."):
+            qa_chain = get_qa_chain()
+            response = qa_chain.invoke({
+                "question": prompt,
+                "chat_history": st.session_state.chat_history
+            })
+
+            result = response["answer"]
+            
             st.chat_message("assistant").markdown(result)
             st.session_state.messages.append({'role': 'assistant', 'content': result})
+            st.session_state.chat_history.append((prompt, result))
 
-        except Exception as e:
-            st.error(f"An error occurred while setting up the QA chain: {e}")
-
-
-if __name__ == "__main__":
-    main()
+    except Exception as e:
+        st.error(f"An error occurred while processing your query: {e}")

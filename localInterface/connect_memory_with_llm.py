@@ -1,31 +1,50 @@
-from langchain_core.prompts import PromptTemplate
-from langchain.chains import RetrievalQA
-from langchain_community.embeddings import SentenceTransformerEmbeddings
-from langchain_community.vectorstores import FAISS
-from dotenv import load_dotenv, find_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
 import os
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import ConversationalRetrievalChain
+from llm_memory import get_vectorstore
+from langchain_google_genai import ChatGoogleGenerativeAI
+from dotenv import load_dotenv, find_dotenv
 
-# Load environment variables
 load_dotenv(find_dotenv())
 
-# Load LLM
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 def load_llm():
     return ChatGoogleGenerativeAI(
         model="gemini-2.0-flash",
         google_api_key=GEMINI_API_KEY,
-        temperature=0.7
+        temperature=0.5
     )
 
-# Custom Prompt
 CUSTOM_PROMPT_TEMPLATE = """<s>[INST] <<SYS>>
-You are a helpful AI assistant developed by students of EEE (Electrical and Electronics Engineering)department to address the queries related to VNR VJIET.
-Use the pieces of information provided in the context to answer the user's question.
-If you dont know the answer, just say that you dont know, dont try to make up an answer. 
-Dont provide anything out of the given context.
-Greet the users in short if they greet you.
+You are a helpful AI assistant developed by students of the EEE department to answer queries about VNR VJIET (Valluripally Nageswara Rao Vignana Jyothi Institute of Engineering and Technology). 
+You can also solve queries related to general engineering concepts taught in VNR VJIET.
+
+Knowledge of the following departments is available:
+1. Computer Science and Engineering (CSE)
+2. Information Technology (IT)
+3. Electronics and Communication Engineering (ECE)
+4. Electrical and Electronics Engineering (EEE)
+5. Electrical and Instrumentation Engineering (EIE)
+6. Mechanical Engineering (ME)
+7. Civil Engineering (CE)
+8. Automobile Engineering
+9. Humanities and Sciences
+10. Chemistry
+11. Physics
+12. Mathematics
+
+Rules for interacting with users (follow strictly):
+1. If the question can be answered using the provided context, answer strictly using that context. Do not make assumptions.
+2. If the question is related to studies, curriculum, or general engineering topics, answer it even if it is not directly in the context.
+3. If the question is unrelated to VNR VJIET, studies, or college topics, reply: "Sorry, I cannot answer that."
+4. If you are not sure even after checking the context, say "I don't know."
+5. If the user greets you, greet them back briefly.
+6. Restrict your answers strictly to the question asked.
+7. Do not make assumptions or fabricate answers.
+8. Do not reveal context details unless asked.
+9. If the user uses abusive, rude, or offensive language, politely ask them to use respectful language.
+
 <</SYS>>
 
 Context: {context}
@@ -34,26 +53,17 @@ Question: {question} [/INST]
 
 def set_custom_prompt(custom_prompt_template=CUSTOM_PROMPT_TEMPLATE):
     return PromptTemplate(
-        template=custom_prompt_template, 
+        template=custom_prompt_template,
         input_variables=["context", "question"]
     )
 
-# Load Vectorstore
-DB_FAISS_PATH = "vectorstore/db_faiss"
-
-def get_vectorstore():
-    embedding_model = SentenceTransformerEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
-    return db
-
-# Build QA Chain
 def get_qa_chain():
     vector_store = get_vectorstore()
-    qa_chain = RetrievalQA.from_chain_type(
+    qa_chain = ConversationalRetrievalChain.from_llm(
         llm=load_llm(),
         chain_type="stuff",
-        retriever=vector_store.as_retriever(),
+        retriever=vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 5}),
         return_source_documents=True,
-        chain_type_kwargs={'prompt': set_custom_prompt()}
+        combine_docs_chain_kwargs={'prompt': set_custom_prompt()}
     )
     return qa_chain

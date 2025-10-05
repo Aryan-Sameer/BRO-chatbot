@@ -1,11 +1,10 @@
-# admin.py
 import os
 import streamlit as st
 from supabase import create_client
 from dotenv import load_dotenv
 from datetime import datetime
 
-load_dotenv()  # uses .env in repo for local testing
+load_dotenv()
 
 # Environment vars (set these in your deployment platform's secrets)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -33,7 +32,7 @@ action = st.sidebar.radio("Action", ["Upload PDFs", "List / Delete PDFs"])
 if action == "Upload PDFs":
     uploaded_files = st.file_uploader("Choose PDF files", type=["pdf"], accept_multiple_files=True)
     if uploaded_files:
-        if st.button("Upload to Supabase"):
+        if st.button("Upload to database"):
             for u in uploaded_files:
                 file_bytes = u.read()
                 fname = u.name
@@ -77,5 +76,3 @@ elif action == "List / Delete PDFs":
             st.write("---")
     except Exception as e:
         st.error(f"Failed to list files: {e}")
-
-st.write("Admin app connected to Supabase storage.")
