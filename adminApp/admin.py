@@ -72,7 +72,7 @@ elif action == "List / Delete PDFs":
                     supabase.storage.from_(BUCKET).remove([name])
                     # delete metadata row too (optional)
                     supabase.table("pdfs").delete().eq("filename", name).execute()
-                    st.experimental_rerun()
+                    st.rerun()
             st.write("---")
     except Exception as e:
         st.error(f"Failed to list files: {e}")
