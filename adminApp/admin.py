@@ -19,18 +19,22 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 BUCKET = "pdfs"
 storage = supabase.storage.from_(BUCKET)
 
-st.title("📂 College PDFs Admin")
+st.title("📂 College Documents Admin")
 
 # simple auth
 password = st.sidebar.text_input("Admin password", type="password")
 if password != ADMIN_PASSWORD:
-    st.sidebar.warning("Enter admin password to manage PDFs")
+    st.sidebar.warning("Enter admin password to manage documents.")
     st.stop()
 
-action = st.sidebar.radio("Action", ["Upload PDFs", "List / Delete PDFs"])
+action = st.sidebar.radio("Action", ["Upload documents", "List / Delete documents"])
 
-if action == "Upload PDFs":
-    uploaded_files = st.file_uploader("Choose PDF files", type=["pdf"], accept_multiple_files=True)
+if action == "Upload documents":
+    uploaded_files = st.file_uploader(
+        "Choose files to upload",
+        type=["pdf", "docx", "doc", "pptx", "ppt", "xlsx", "xls", "txt"],
+        accept_multiple_files=True
+    )
     if uploaded_files:
         if st.button("Upload to database"):
             for u in uploaded_files:
@@ -53,9 +57,9 @@ if action == "Upload PDFs":
                     st.error(f"Failed to upload {fname}: {e}")
 
     else:
-        st.info("Drag-and-drop or select PDFs to upload.")
+        st.info("Drag-and-drop or select documents to upload.")
 
-elif action == "List / Delete PDFs":
+elif action == "List / Delete documents":
     st.subheader("Files in bucket")
     try:
         files = supabase.storage.from_(BUCKET).list()

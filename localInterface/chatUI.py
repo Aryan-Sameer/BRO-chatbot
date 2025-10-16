@@ -38,12 +38,8 @@ if prompt:
     try:
         with st.spinner("Thinking..."):
             qa_chain = get_qa_chain()
-            response = qa_chain.invoke({
-                "question": prompt,
-                "chat_history": st.session_state.chat_history
-            })
-
-            result = response["answer"]
+            response = qa_chain(prompt)
+            result = response["result"] if isinstance(response, dict) else response
             
             st.chat_message("assistant").markdown(result)
             st.session_state.messages.append({'role': 'assistant', 'content': result})

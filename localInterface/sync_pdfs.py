@@ -9,7 +9,8 @@ load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 BUCKET = "pdfs"
-LOCAL_DATA = "data/"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOCAL_DATA = os.path.join(BASE_DIR, "data") 
 
 os.makedirs(LOCAL_DATA, exist_ok=True)
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -32,7 +33,8 @@ def download_file(name):
 
 def sync_and_rebuild():
     remote = set(list_remote_files())
-    local = set([f for f in os.listdir(LOCAL_DATA) if f.lower().endswith(".pdf")])
+    SUPPORTED_EXTS = (".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".csv", ".txt")
+    local = set([f for f in os.listdir(LOCAL_DATA) if f.lower().endswith(SUPPORTED_EXTS)])
 
     # Download new files
     for name in remote - local:
