@@ -4,3 +4,4 @@ localInterface/data/*
 debug_retrieval.py
 vectorstore/*
 localInterface/__pycache__/*
+implementation.txt
