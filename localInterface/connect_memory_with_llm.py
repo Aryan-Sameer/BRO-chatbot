@@ -1,31 +1,35 @@
 import os
 from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.llms import Ollama
+from langchain_core.prompts import PromptTemplate
 from llm_memory import get_vectorstore
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 
 def get_qa_chain():
-    """Create a retrieval-based QA chain that works with all document types."""
+    """Create a retrieval-based QA chain that works with all document types using Ollama locally."""
 
     vector_store = get_vectorstore()
     retriever = vector_store.as_retriever(
         search_type="similarity",
-        search_kwargs={"k": 7}
+        search_kwargs={"k": 8}
     )
 
-    # --- Prompt Template ---
+    # --- Custom Prompt ---
     CUSTOM_PROMPT_TEMPLATE = """You are a helpful AI assistant developed by students of the EEE department at VNR VJIET.
 
-    Answer the user's question based on the provided context. The context comes from various sources such as PDFs, Word documents, Excel sheets, PPTs, or text files uploaded by admins.
+    Answer the user's question based only on the provided context below. 
+    If the answer is not found in the context, respond only with:
+    "I don't know."
 
     Rules:
-    1. Use only the given context to answer. 
-    2. If only partial information is available, mention that and provide the best possible answer.
-    3. If the context does not have relevant data, respond: "Sorry, I don't have enough information in the provided data."
-    4. Keep your answers clear, precise, and directly relevant to the question.
+    0. Keep answers concise and to the point. Do not include greetings or explanations.
+    1. Use only the given context to answer.
+    2. If partial information is available, mention that and give the best possible answer.
+    3. Do not say anything else unless asked.
+    4. Do not use bullet points — use numbers if multiple points exist.
+    5. Do not explain what you are doing.
 
     ---
     Context:
@@ -42,13 +46,8 @@ def get_qa_chain():
         template=CUSTOM_PROMPT_TEMPLATE
     )
 
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
-        google_api_key=GEMINI_API_KEY,
-        temperature=0.3  # lower = more factual
-    )
+    # --- Use Ollama model (local) ---
+    llm = Ollama(model="phi3", temperature=0.3)
 
     # --- Create Retrieval QA chain ---
     qa_chain = RetrievalQA.from_chain_type(
@@ -59,7 +58,6 @@ def get_qa_chain():
 
     # --- Simple wrapper ---
     def run(query: str):
-        """Run a query against the knowledge base."""
         query = query.strip()
         return qa_chain.invoke({"query": query})
 

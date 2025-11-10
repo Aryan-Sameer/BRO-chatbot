@@ -1,40 +1,20 @@
-# llm_memory.py
 import os
 import shutil
 import pandas as pd
-from langchain.schema import Document
-from langchain_community.document_loaders import (
-    PyPDFLoader,
-    UnstructuredPowerPointLoader,
-    CSVLoader,
-)
 from docx import Document
+from langchain_core.documents import Document
+from langchain_community.document_loaders import PyPDFLoader, UnstructuredPowerPointLoader
 from langchain.schema import Document as LangchainDoc
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
+from extract_excel_data import parse_excel_or_csv
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # Absolute paths (important)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(BASE_DIR, "localInterface", "data")
 DB_FAISS_PATH = os.path.join(BASE_DIR, "vectorstore", "db_faiss")
-
-# Config: how we convert excel rows -> documents
-EXCEL_ROW_TO_TEXT_JOINER = " | "  # change if you want different formatting
-
-def extract_text_from_excel(file_path):
-    excel_data = pd.read_excel(file_path, sheet_name=None)
-    text_data = ""
-    for sheet_name, df in excel_data.items():
-        text_data += f"\nSheet: {sheet_name}\n"
-        df = df.fillna("")
-        for _, row in df.iterrows():
-            row_text = ", ".join([
-                f"{col.strip()}: {str(val).strip()}"
-                for col, val in row.items() if str(val).strip() != ""
-            ])
-            text_data += row_text + "\n"
-    return text_data.strip()
 
 def extract_text_from_docx(file_path):
     doc = Document(file_path)
@@ -87,19 +67,10 @@ def load_documents():
                     d.metadata.setdefault("source", file)
                 documents.extend(docs)
 
-            elif ext == "csv":
-                print("Loading CSV:", file)
-                loader = CSVLoader(path)
-                docs = loader.load()
-                for d in docs:
-                    d.metadata = d.metadata or {}
-                    d.metadata.setdefault("source", file)
-                documents.extend(docs)
-
-            elif ext in ("xls", "xlsx"):
-                print("Loading Excel:", file)
-                content = extract_text_from_excel(path)
-                documents.append(LangchainDoc(page_content=content, metadata={"source": file}))
+            if ext.endswith(("xlsx", "xls", "csv")):
+                excel_chunks = parse_excel_or_csv(path)
+                for text in excel_chunks:
+                    documents.append(Document(page_content=text, metadata={"source": ext}))
 
             elif ext == "txt":
                 print("Loading TXT:", file)
@@ -115,7 +86,6 @@ def load_documents():
             print(f"⚠️ Error loading {file}: {e}")
 
     return documents
-
 
 def rebuild_database():
     """Full rebuild: clear old DB, load documents, split, embed, save FAISS."""
@@ -143,8 +113,8 @@ def rebuild_database():
         doc.metadata["source"] = f"{src} - page {page}"
 
     # Embedding model (CPU by default). If you want GPU set {"device":"cuda"}.
-    embedding_model = SentenceTransformerEmbeddings(
-        model_name="intfloat/e5-small-v2",
+    embedding_model = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
         model_kwargs={"device": "cpu"}
     )
 
@@ -155,13 +125,12 @@ def rebuild_database():
     print("FAISS DB saved to:", DB_FAISS_PATH)
     return True
 
-
 def get_vectorstore():
     """Load FAISS DB (used at runtime)."""
     if not os.path.exists(DB_FAISS_PATH):
         raise ValueError("FAISS DB not found. Rebuild first.")
-    embedding_model = SentenceTransformerEmbeddings(
-        model_name="intfloat/e5-small-v2",
+    embedding_model = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
         model_kwargs={"device": "cpu"}
     )
     db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
