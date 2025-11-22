@@ -70,7 +70,7 @@ def load_documents():
             if ext.endswith(("xlsx", "xls", "csv")):
                 excel_chunks = parse_excel_or_csv(path)
                 for text in excel_chunks:
-                    documents.append(Document(page_content=text, metadata={"source": ext}))
+                    documents.append(Document(page_content=text, metadata={"source": file}))
 
             elif ext == "txt":
                 print("Loading TXT:", file)
@@ -101,7 +101,7 @@ def rebuild_database():
         raise ValueError("No documents found in data/")
 
     print(f"Loaded {len(documents)} raw documents. Splitting into chunks...")
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=80)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     text_chunks = splitter.split_documents(documents)
     print(f"Total chunks created: {len(text_chunks)}")
 

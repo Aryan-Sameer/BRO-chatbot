@@ -13,7 +13,7 @@ def get_qa_chain():
     vector_store = get_vectorstore()
     retriever = vector_store.as_retriever(
         search_type="similarity",
-        search_kwargs={"k": 8}
+        search_kwargs={"k": 5}
     )
 
     # --- Custom Prompt ---
@@ -25,11 +25,12 @@ def get_qa_chain():
 
     Rules:
     0. Keep answers concise and to the point. Do not include greetings or explanations.
-    1. Use only the given context to answer.
-    2. If partial information is available, mention that and give the best possible answer.
-    3. Do not say anything else unless asked.
-    4. Do not use bullet points — use numbers if multiple points exist.
-    5. Do not explain what you are doing.
+    1. Always greet the user when they greet you in short without saying anything extra.
+    2. Use only the given context to answer.
+    3. If partial information is available, mention that and give the best possible answer.
+    4. Do not say anything else unless asked.
+    5. Do not use bullet points — use numbers if multiple points exist.
+    6. Do not explain what you are doing.
 
     ---
     Context:

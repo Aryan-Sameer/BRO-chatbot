@@ -53,3 +53,5 @@ def sync_and_rebuild():
         print("Rebuild done.")
     else:
         print("No changes. FAISS is up-to-date.")
+
+sync_and_rebuild()
