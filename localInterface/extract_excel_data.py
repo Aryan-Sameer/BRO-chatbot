@@ -24,6 +24,6 @@ def parse_excel_or_csv(file_path: str) -> list[str]:
             # Format each row like the reference
             parsed_text = ", ".join([f"{col}: {row[col]}" for col in df.columns if str(row[col]).strip()])
             if parsed_text.strip():
-                chunks.append(f"Row {index + 1} in sheet {sheet_name} - {parsed_text},")
-
+                chunks.append(f"{sheet_name} - {parsed_text},")
+    
     return chunks

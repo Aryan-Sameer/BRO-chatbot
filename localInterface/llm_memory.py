@@ -101,7 +101,10 @@ def rebuild_database():
         raise ValueError("No documents found in data/")
 
     print(f"Loaded {len(documents)} raw documents. Splitting into chunks...")
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500, 
+        chunk_overlap=80
+    )
     text_chunks = splitter.split_documents(documents)
     print(f"Total chunks created: {len(text_chunks)}")
 
@@ -112,10 +115,11 @@ def rebuild_database():
         page = doc.metadata.get("page", doc.metadata.get("row", "unknown"))
         doc.metadata["source"] = f"{src} - page {page}"
 
-    # Embedding model (CPU by default). If you want GPU set {"device":"cuda"}.
+    # Embedding model (CPU by default).
     embedding_model = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"}
+        model_name="BAAI/bge-base-en-v1.5",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True}
     )
 
     # build and save FAISS
@@ -130,8 +134,9 @@ def get_vectorstore():
     if not os.path.exists(DB_FAISS_PATH):
         raise ValueError("FAISS DB not found. Rebuild first.")
     embedding_model = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2",
-        model_kwargs={"device": "cpu"}
+        model_name="BAAI/bge-base-en-v1.5",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True}
     )
     db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
     return db
