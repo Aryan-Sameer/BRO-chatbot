@@ -102,7 +102,7 @@ def rebuild_database():
 
     print(f"Loaded {len(documents)} raw documents. Splitting into chunks...")
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500, 
+        chunk_size=550, 
         chunk_overlap=80
     )
     text_chunks = splitter.split_documents(documents)
