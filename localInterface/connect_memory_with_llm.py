@@ -13,13 +13,13 @@ def get_qa_chain():
     vector_store = get_vectorstore()
     retriever = vector_store.as_retriever(
         search_type="similarity",
-        search_kwargs={"k": 6}
+        search_kwargs={"k": 10}
     )
 
     # --- Custom Prompt ---
-    CUSTOM_PROMPT_TEMPLATE = """You are a helpful AI assistant developed by students of the EEE department at VNR VJIET.
+    CUSTOM_PROMPT_TEMPLATE = """You are a helpful AI assistant developed by students of the EEE department at VNR VJIET to assist with academic and technical queries.
 
-    Answer the user's question based only on the provided context below. 
+    Answer the user's question in short, limiting to the query based only on the provided context below. 
     If the answer is not found in the context, respond only with:
     "I don't know."
 

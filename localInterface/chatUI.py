@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from sync_docs import sync_and_rebuild
 from connect_memory_with_llm import get_qa_chain
@@ -13,11 +14,19 @@ from vosk import Model, KaldiRecognizer
 import pyaudio
 import json
 
+from dotenv import load_dotenv
+load_dotenv()
+
+ADMIN_PASSWORD = os.getenv("ADMIN_PASS", "change_me")
+
 # ---------------- Scheduler ----------------
 def job():
-    print("Running sync_pdfs.py task...")
-    sync_and_rebuild()
-    print("Sync completed!")
+    try:
+        print("Running sync_pdfs.py task...")
+        sync_and_rebuild()
+        print("Sync completed!")
+    except Exception as e:
+        print(f"Error during sync: {e}")
 
 def start_scheduler():
     schedule.every(2).hours.do(job)
@@ -51,18 +60,46 @@ def speak(text):
 # ---------------- UI ----------------
 st.set_page_config(page_title="VNR VJIET Assistant", page_icon="🤖")
 
+# ---- hide ui controls ----
+import streamlit as st
+
+hide_streamlit_style = """
+    <style>
+        /* Hide main menu (the top-right dots) */
+        #MainMenu {visibility: hidden;}
+
+        /* Hide deploy button */
+        .stDeployButton {display: none;}
+
+        /* Hide the "Manage app" button if it appears */
+        button[kind="header"] {display: none;}
+
+        /* remove padding on top */
+        .block-container {padding-top: 1rem;}
+
+        /* reduce padding on bottom */
+        .st-emotion-cache-139wi93 {padding-bottom: 2rem;}
+    </style>
+"""
+
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 st.title("Welcome to VNR VJIET")
 st.write("I am your AI assistant, here to help you with your queries about VNR VJIET.")
 
-# Sidebar Sync
+# ---- Sidebar ----
 st.sidebar.header("Admin Controls")
-if st.sidebar.button("🔄 Update latest data"):
-    with st.spinner("Rebuilding database..."):
-        try:
-            sync_and_rebuild()
-            st.sidebar.success("✅ Database updated.")
-        except Exception as e:
-            st.sidebar.error(f"❌ Sync failed: {e}")
+if password := st.sidebar.text_input("Enter admin password", type="password"):
+    if password != ADMIN_PASSWORD:  # Replace with secure password management in production
+        st.sidebar.error("Incorrect password.")
+    else: 
+        if st.sidebar.button("🔄 Update latest data"):
+            with st.spinner("Rebuilding database..."):
+                try:
+                    sync_and_rebuild()
+                    st.sidebar.success("✅ Database updated.")
+                except Exception as e:
+                    st.sidebar.error(f"❌ Sync failed: {e}")
 
 # Initialize session
 if 'messages' not in st.session_state:
