@@ -19,7 +19,8 @@ def get_qa_chain():
     # --- Custom Prompt ---
     CUSTOM_PROMPT_TEMPLATE = """You are a helpful AI assistant developed by students of the EEE department at VNR VJIET to assist with academic and technical queries.
 
-    Answer the user's question in short, limiting to the query based only on the provided context below.
+    Answer the user's questions in short, limiting to the query based only on the provided context below.
+    The context contains information from multiple sources including PDFs, Word documents, PowerPoint presentations, Excel sheets, and text files.
     Greet the user when they greet you.
 
     Answer the question if it is related to engineering branches:
@@ -55,7 +56,7 @@ def get_qa_chain():
     )
 
     # --- Use Ollama model (local) ---
-    llm = Ollama(model="phi3", temperature=0.2)
+    llm = Ollama(model="phi3", temperature=0.3)
 
     # --- Create Retrieval QA chain ---
     qa_chain = RetrievalQA.from_chain_type(

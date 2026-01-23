@@ -1,8 +1,6 @@
 import os
 import streamlit as st
 import numpy as np
-# from sync_docs import sync_and_rebuild
-# from connect_memory_with_llm import get_qa_chain
 
 from ChatBot.localInterface.sync_docs import sync_and_rebuild
 from ChatBot.localInterface.connect_memory_with_llm import get_qa_chain
@@ -24,40 +22,43 @@ load_dotenv()
 
 ADMIN_PASSWORD = os.getenv("ADMIN_PASS", "change_me")
 MODEL_PATH = "ChatBot/models/vosk/vosk-model-small-en-us-0.15"
-VOSK_MODEL_PATH = "ChatBot/models/vosk"
 
 @st.cache_resource
 def load_vosk_model():
     return Model(MODEL_PATH)
 
+@st.cache_resource
+def load_qa_chain():
+    return get_qa_chain()
+
 def main():
 
     # ---------------- Scheduler ----------------
-    def job():
-        try:
-            print("Running sync_pdfs.py task...")
-            print( datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            sync_and_rebuild()
-            print("Sync completed!")
-        except Exception as e:
-            print(f"Error during sync: {e}")
+    # def job():
+    #     try:
+    #         print("Running sync_pdfs.py task...")
+    #         print( datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    #         sync_and_rebuild()
+    #         print("Sync completed!")
+    #     except Exception as e:
+    #         print(f"Error during sync: {e}")
 
-    def start_scheduler():
-        schedule.every(2).hours.do(job)
-        while True:
-            schedule.run_pending()
-            time.sleep(60)
+    # def start_scheduler():
+    #     schedule.every(2).hours.do(job)
+    #     while True:
+    #         schedule.run_pending()
+    #         time.sleep(3600 * 2)
 
-    thread = threading.Thread(target=start_scheduler, daemon=True)
-    thread.start()
+    # thread = threading.Thread(target=start_scheduler, daemon=True)
+    # thread.start()
 
     # ---------------- Voice Functions ----------------
     def voice_input():
-        if not os.path.exists(VOSK_MODEL_PATH):
+        if not os.path.exists(MODEL_PATH):
             st.error("❌ Vosk model not found!")
             return ""
 
-        model = Model(VOSK_MODEL_PATH)
+        model = load_vosk_model()
         recognizer = KaldiRecognizer(model, 16000)
 
         st.info("🎤 Listening... Speak now")
@@ -98,7 +99,7 @@ def main():
 
     def speak(text):
         engine = pyttsx3.init()
-        engine.setProperty('rate', 200)      # adjust speaking rate
+        engine.setProperty('rate', 180)      # adjust speaking rate
         engine.setProperty('volume', 1.0)    # volume (0.0 to 1.0)
         engine.say(text)
         engine.runAndWait()
@@ -166,7 +167,7 @@ def main():
 
         try:
             with st.spinner("Thinking..."):
-                qa_chain = get_qa_chain()
+                qa_chain = load_qa_chain()
                 response = qa_chain(prompt)
                 result = response["result"] if isinstance(response, dict) else response
 

@@ -53,3 +53,6 @@ def sync_and_rebuild():
         print("Rebuild done.")
     else:
         print("No changes. FAISS is up-to-date.")
+
+if __name__ == "__main__":
+    sync_and_rebuild()

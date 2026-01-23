@@ -8,8 +8,8 @@ from langchain.schema import Document as LangchainDoc
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from ChatBot.localInterface.extract_excel_data import parse_excel_or_csv
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
 from langchain_community.embeddings import HuggingFaceEmbeddings
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 # Absolute paths (important)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -110,7 +110,7 @@ def rebuild_database():
     print(f"Loaded {len(documents)} raw documents. Splitting into chunks...")
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=550, 
-        chunk_overlap=80
+        chunk_overlap=150
     )
     text_chunks = splitter.split_documents(documents)
     print(f"Total chunks created: {len(text_chunks)}")
